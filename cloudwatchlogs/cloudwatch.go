@@ -50,7 +50,7 @@ func (c *Client) FetchLogs(logGroup, filter string, startDate, endDate time.Time
 }
 
 func prepareFilter(input string) string {
-	if strings.HasPrefix(input, "$") {
+	if strings.Contains(input, "$.") {
 		return fmt.Sprintf("{ %s }", input)
 	}
 	return input

@@ -15,8 +15,8 @@ var startDate, endDate time.Time
 func init() {
 	flag.StringVar(&logGroup, "logGroup", "", "logGroup on Cloudwatch logs")
 	flag.StringVar(&filter, "filter", "", `Keyword to look for or Cloudwatchlog filter, e.g. $.userIdentity.userName="terraform"`)
-	flag.StringVar(&startDateStr, "startDate", "", "Start date to search logs, format YYYY-mm-dd. Defaults to 3 days ago")
-	flag.StringVar(&endDateStr, "endDate", "", "End date to search logs, format YYYY-mm-dd. Defaults to today")
+	flag.StringVar(&startDateStr, "start", "", "Start date to search logs, format YYYY-mm-dd. Defaults to 3 days ago")
+	flag.StringVar(&endDateStr, "end", "", "End date to search logs, format YYYY-mm-dd. Defaults to today")
 	flag.Parse()
 	validateParams()
 }
