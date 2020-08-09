@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"encoding/csv"
 	"encoding/json"
+	"fmt"
 	"os"
 	"strings"
 	"time"
 
 	clogs "github.com/aws/aws-sdk-go/service/cloudwatchlogs"
 	"github.com/ayoul3/trailSniffer/cloudwatchlogs"
+	"github.com/pkg/errors"
 	"github.com/prometheus/common/log"
 )
 
@@ -28,24 +30,33 @@ func LookupLogs(client *cloudwatchlogs.Client, logGroup, filter string, startDat
 
 func ProcessEvents(events []*clogs.FilteredLogEvent) {
 	w := csv.NewWriter(os.Stdout)
+	var processedEvent []string
+	var err error
+
 	w.Write([]string{"Time", "Source", "Caller identity", "Event name", "Parameters", "Error"})
 	for _, logEvent := range events {
-		var event CloudTrailEvent
-		if logEvent.Message == nil {
+		if processedEvent, err = ExtractInfoFromEvent(logEvent); err != nil {
+			log.Warn(err)
 			continue
 		}
-		err := json.Unmarshal([]byte(*logEvent.Message), &event)
-		if err != nil || event.EventName == "" {
-			log.Warnf("Failed to unmarshall log event ID: %s\n", *logEvent.EventId)
-			continue
-		}
-
-		prettyParams := formatRequestParams(event.RequestParameters)
-		identity := formatUsername(event)
-
-		w.Write([]string{event.EventTime.Format(time.RFC3339), event.SourceIP, identity, event.EventName, prettyParams, event.ErrorCode})
+		w.Write(processedEvent)
 	}
 	w.Flush()
+}
+
+func ExtractInfoFromEvent(logEvent *clogs.FilteredLogEvent) (res []string, err error) {
+	var event CloudTrailEvent
+
+	if logEvent.Message == nil {
+		return nil, fmt.Errorf("Empty message for event ID: %s", *logEvent.EventId)
+	}
+	if err = json.Unmarshal([]byte(*logEvent.Message), &event); err != nil {
+		return nil, errors.Wrapf(err, "Failed to unmarshall log event ID: %s", *logEvent.EventId)
+	}
+
+	prettyParams := formatRequestParams(event.RequestParameters)
+	identity := formatUsername(event)
+	return []string{event.EventTime.Format(time.RFC3339), event.SourceIP, identity, event.EventName, prettyParams, event.ErrorCode}, nil
 }
 
 func formatUsername(event CloudTrailEvent) string {
@@ -55,7 +66,7 @@ func formatUsername(event CloudTrailEvent) string {
 	case "Root":
 		return "Root"
 	case "AWSService":
-		return event.EventSource
+		return event.UserIdentity.InvokedBy
 	case "AssumedRole":
 		return userFromARN(event.UserIdentity.Arn)
 	default:

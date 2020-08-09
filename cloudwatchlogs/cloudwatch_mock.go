@@ -11,8 +11,9 @@ import (
 // MockAPI is an CloudwatchLogs client mock
 type MockAPI struct {
 	cloudwatchlogsiface.CloudWatchLogsAPI
-	ShouldFail    bool
-	ShouldBeEmpty bool
+	ShouldFail          bool
+	ShouldPartiallyFail bool
+	ShouldBeEmpty       bool
 }
 
 func (c *MockAPI) FilterLogEventsPages(input *cloudwatchlogs.FilterLogEventsInput, fn func(page *cloudwatchlogs.FilterLogEventsOutput, lastPage bool) bool) (err error) {
@@ -38,6 +39,10 @@ func (c *MockAPI) FilterLogEventsPages(input *cloudwatchlogs.FilterLogEventsInpu
 	fn(&cloudwatchlogs.FilterLogEventsOutput{
 		Events: []*cloudwatchlogs.FilteredLogEvent{event1, event2, event3},
 	}, true)
+
+	if c.ShouldPartiallyFail {
+		err = errors.New("failed to fetch some events")
+	}
 
 	return
 }
