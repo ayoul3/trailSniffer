@@ -12,7 +12,7 @@ import (
 	clogs "github.com/aws/aws-sdk-go/service/cloudwatchlogs"
 	"github.com/ayoul3/trailSniffer/cloudwatchlogs"
 	"github.com/pkg/errors"
-	"github.com/prometheus/common/log"
+	log "github.com/sirupsen/logrus"
 )
 
 func LookupLogs(client *cloudwatchlogs.Client, logGroup, filter string, startDate, endDate time.Time) (result []*clogs.FilteredLogEvent, err error) {
