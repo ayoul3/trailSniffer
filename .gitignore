@@ -1,8 +1,11 @@
 *
 !*.go
+!*.yaml
 !*.md
 !go.mod
 !go.sum
 !.gitignore
 !lib
 !cloudwatchlogs
+!.github
+!workflows

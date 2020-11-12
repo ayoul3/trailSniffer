@@ -9,7 +9,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudwatchlogs"
 	"github.com/aws/aws-sdk-go/service/cloudwatchlogs/cloudwatchlogsiface"
-	"github.com/prometheus/common/log"
 )
 
 // Client is a EC2 custom client
@@ -30,19 +29,15 @@ func NewAPI() *cloudwatchlogs.CloudWatchLogs {
 }
 
 func (c *Client) FetchLogs(logGroup, filter string, startDate, endDate time.Time) (output []*cloudwatchlogs.FilteredLogEvent, err error) {
-
-	preparedFilter := prepareFilter(filter)
 	input := &cloudwatchlogs.FilterLogEventsInput{
 		StartTime:     aws.Int64(startDate.Unix() * 1000),
 		EndTime:       aws.Int64(endDate.Unix() * 1000),
 		Limit:         aws.Int64(10000),
 		LogGroupName:  aws.String(logGroup),
-		FilterPattern: aws.String(preparedFilter),
+		FilterPattern: aws.String(filter),
 	}
-	log.Infof("Full filter %s", preparedFilter)
 	err = c.api.FilterLogEventsPages(input,
 		func(page *cloudwatchlogs.FilterLogEventsOutput, lastPage bool) bool {
-			log.Infof("Got %d events", len(page.Events))
 			output = append(output, page.Events...)
 			return !lastPage
 		})

@@ -15,17 +15,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func LookupLogs(client *cloudwatchlogs.Client, logGroup, filter string, startDate, endDate time.Time) (result []*clogs.FilteredLogEvent, err error) {
+func LookupLogs(client *cloudwatchlogs.Client, logGroup string, filter *Filter, startDate, endDate time.Time) (result []*clogs.FilteredLogEvent, err error) {
 	log.Infof("Looking up events between %s and %s", startDate.Format(time.RFC3339), endDate.Format(time.RFC3339))
+	filterStr := filter.Parse()
+	log.Infof("Full filter: %s", filterStr)
 
-	if result, err = client.FetchLogs(logGroup, filter, startDate, endDate); err != nil {
-		if len(result) == 0 {
-			return nil, err
-		}
-		log.Warnf("Retrieved %d with the following error %s", len(result), err)
-	}
-
-	return result, nil
+	return client.FetchLogs(logGroup, filterStr, startDate, endDate)
 }
 
 func ProcessEvents(events []*clogs.FilteredLogEvent) {
@@ -100,10 +95,11 @@ type CloudTrailEvent struct {
 		AccessKeyID string `json:"accessKeyId"`
 		InvokedBy   string `json:"invokedBy"`
 	} `json:"userIdentity"`
-	EventName         string      `json:"eventName"`
-	RequestParameters interface{} `json:"requestParameters"`
-	UserAgent         string      `json:"userAgent"`
-	EventSource       string      `json:"eventSource"`
-	Region            string      `json:"awsRegion"`
-	ErrorCode         string      `json:"errorCode"`
+	EventName          string      `json:"eventName"`
+	RequestParameters  interface{} `json:"requestParameters"`
+	UserAgent          string      `json:"userAgent"`
+	RecipientAccountId string      `json:"recipientAccountId"`
+	EventSource        string      `json:"eventSource"`
+	Region             string      `json:"awsRegion"`
+	ErrorCode          string      `json:"errorCode"`
 }

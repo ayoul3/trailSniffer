@@ -15,14 +15,16 @@ var _ = Describe("LookupLogs", func() {
 	Context("When calling fetchlogs fails", func() {
 		It("should return an error", func() {
 			client := cloudwatchlogs.NewClient(&cloudwatchlogs.MockAPI{ShouldFail: true})
-			_, err := lib.LookupLogs(client, "default", "special-user", time.Now().Add(-3*time.Hour), time.Now())
+			filter := &lib.Filter{UserName: "special-user"}
+			_, err := lib.LookupLogs(client, "default", filter, time.Now().Add(-3*time.Hour), time.Now())
 			Expect(err).To(HaveOccurred())
 		})
 	})
 	Context("When calling fetchlogs returns empty results", func() {
 		It("should return empty set", func() {
 			client := cloudwatchlogs.NewClient(&cloudwatchlogs.MockAPI{ShouldBeEmpty: true})
-			res, err := lib.LookupLogs(client, "default", "special-user", time.Now().Add(-3*time.Hour), time.Now())
+			filter := &lib.Filter{UserName: "special-user"}
+			res, err := lib.LookupLogs(client, "default", filter, time.Now().Add(-3*time.Hour), time.Now())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(res)).To(Equal(0))
 		})
@@ -30,7 +32,8 @@ var _ = Describe("LookupLogs", func() {
 	Context("When calling fetchlogs succeeds", func() {
 		It("should return 3 events", func() {
 			client := cloudwatchlogs.NewClient(&cloudwatchlogs.MockAPI{})
-			res, err := lib.LookupLogs(client, "default", "special-user", time.Now().Add(-3*time.Hour), time.Now())
+			filter := &lib.Filter{UserName: "special-user"}
+			res, err := lib.LookupLogs(client, "default", filter, time.Now().Add(-3*time.Hour), time.Now())
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(res)).To(Equal(3))
 		})
@@ -38,8 +41,9 @@ var _ = Describe("LookupLogs", func() {
 	Context("When calling fetchlogs partially", func() {
 		It("should return 3 events", func() {
 			client := cloudwatchlogs.NewClient(&cloudwatchlogs.MockAPI{ShouldPartiallyFail: true})
-			res, err := lib.LookupLogs(client, "default", "special-user", time.Now().Add(-3*time.Hour), time.Now())
-			Expect(err).ToNot(HaveOccurred())
+			filter := &lib.Filter{UserName: "special-user"}
+			res, err := lib.LookupLogs(client, "default", filter, time.Now().Add(-3*time.Hour), time.Now())
+			Expect(err).To(HaveOccurred())
 			Expect(len(res)).To(Equal(3))
 		})
 	})
@@ -63,7 +67,8 @@ var _ = Describe("ExtractInfoFromEvent", func() {
 	})
 	Context("When processing succeeds", func() {
 		client := cloudwatchlogs.NewClient(&cloudwatchlogs.MockAPI{})
-		events, _ := lib.LookupLogs(client, "default", "special-user", time.Now().Add(-3*time.Hour), time.Now())
+		filter := &lib.Filter{UserName: "special-user"}
+		events, _ := lib.LookupLogs(client, "default", filter, time.Now().Add(-3*time.Hour), time.Now())
 		Context("When event type is AWSService", func() {
 			It("should succeed", func() {
 				processedEvent, err := lib.ExtractInfoFromEvent(events[0])
