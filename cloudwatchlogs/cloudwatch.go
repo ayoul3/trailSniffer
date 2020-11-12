@@ -1,8 +1,6 @@
 package cloudwatchlogs
 
 import (
-	"fmt"
-	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -11,19 +9,19 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudwatchlogs/cloudwatchlogsiface"
 )
 
-// Client is a EC2 custom client
+// Client is a CloudwatchLogs custom client
 type Client struct {
 	api cloudwatchlogsiface.CloudWatchLogsAPI
 }
 
-// NewClient returns a new Client from an CloudWatch client
+// NewClient instantiates a NewClient - a wrapper over Cloudwatchlogs api
 func NewClient(api cloudwatchlogsiface.CloudWatchLogsAPI) *Client {
 	return &Client{
 		api,
 	}
 }
 
-// NewAPI returns a new concrete CloudwatchLogs client
+// NewAPI returns a new real CloudwatchLogs client
 func NewAPI() *cloudwatchlogs.CloudWatchLogs {
 	return cloudwatchlogs.New(session.Must(session.NewSession()))
 }
@@ -42,11 +40,4 @@ func (c *Client) FetchLogs(logGroup, filter string, startDate, endDate time.Time
 			return !lastPage
 		})
 	return output, err
-}
-
-func prepareFilter(input string) string {
-	if strings.Contains(input, "$.") {
-		return fmt.Sprintf("{ %s }", input)
-	}
-	return input
 }
